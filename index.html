@@ -2673,9 +2673,6 @@
                     this.confirmBtn.textContent = 'Approve in wallet\u2026';
                     this.showMessage('Building USDC transaction\u2026', 'info');
 
-                    const conn = new solanaWeb3.Connection(
-                        'https://rpc.ankr.com/solana', 'confirmed'
-                    );
                     const userPubkey  = walletConnection.provider.publicKey;
                     const usdcMint    = new solanaWeb3.PublicKey(this.USDC_MINT);
                     const fromAta     = getAssociatedTokenAddressSync(usdcMint, userPubkey);
@@ -2686,7 +2683,8 @@
                         fromAta, usdcMint, toAta, userPubkey, usdcAmount, 6
                     );
 
-                    const { blockhash } = await conn.getLatestBlockhash();
+                    const bhRes = await fetch(`${AIRDROP_API_URL}/api/blockhash`);
+                    const { blockhash } = await bhRes.json();
                     const tx = new solanaWeb3.Transaction({
                         feePayer: userPubkey,
                         recentBlockhash: blockhash

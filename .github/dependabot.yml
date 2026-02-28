@@ -1,0 +1,118 @@
+# Dependabot configuration for automated dependency updates
+version: 2
+updates:
+  # Enable version updates for npm
+  - package-ecosystem: "npm"
+    directory: "/airdrop-backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "@your-github-username"  # Replace with your GitHub username
+    assignees:
+      - "@your-github-username"  # Replace with your GitHub username
+    labels:
+      - "dependencies"
+      - "npm"
+      - "automated"
+    commit-message:
+      prefix: "chore"
+      prefix-development: "chore"
+      include: "scope"
+    pull-request-branch-name:
+      separator: "-"
+    rebase-strategy: "auto"
+    versioning-strategy: "increase"
+    ignore:
+      # Ignore major version updates for critical packages
+      - dependency-name: "@solana/web3.js"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "express"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "pg"
+        update-types: ["version-update:semver-major"]
+    groups:
+      # Group all non-major development dependency updates
+      dev-dependencies:
+        patterns:
+          - "*"
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+      # Group all Solana-related updates
+      solana:
+        patterns:
+          - "@solana/*"
+          - "@project-serum/*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Enable version updates for Docker
+  - package-ecosystem: "docker"
+    directory: "/airdrop-backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+    reviewers:
+      - "@your-github-username"  # Replace with your GitHub username
+    labels:
+      - "dependencies"
+      - "docker"
+      - "automated"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+
+  # Enable version updates for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+    reviewers:
+      - "@your-github-username"  # Replace with your GitHub username
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "automated"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    groups:
+      # Group all GitHub Actions updates
+      github-actions:
+        patterns:
+          - "*"
+
+  # Enable security updates for Cargo (Rust) if you add the token-lock program
+  - package-ecosystem: "cargo"
+    directory: "/programs/token-lock"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+    reviewers:
+      - "@your-github-username"  # Replace with your GitHub username
+    labels:
+      - "dependencies"
+      - "rust"
+      - "automated"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    ignore:
+      # Be careful with Solana program dependencies
+      - dependency-name: "anchor-lang"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "solana-program"
+        update-types: ["version-update:semver-major"]
+
+# Security alerts configuration
+security-updates:
+  open-pull-requests-limit: 10

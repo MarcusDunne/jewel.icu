@@ -1,0 +1,145 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.test
+*.env
+
+# Private keys and wallets
+wallet.json
+*.key
+*.pem
+private-key.txt
+airdrop-backend/wallet.json
+airdrop-backend/*.key
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+database.log
+airdrop-backend/database.log
+
+# Logs
+logs/
+*.log
+error.log
+access.log
+airdrop.log
+captcha.log
+airdrop-backend/*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+
+# IDE files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.project
+.classpath
+.settings/
+
+# Build outputs
+dist/
+build/
+out/
+target/
+*.o
+*.so
+*.dll
+*.exe
+
+# Testing
+coverage/
+.nyc_output/
+test-results/
+*.lcov
+.coverage
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+.temp/
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+
+# Docker
+docker-compose.override.yml
+.dockerignore.local
+
+# Rust/Cargo (for Solana programs)
+programs/token-lock/target/
+programs/token-lock/Cargo.lock
+**/*.rs.bk
+
+# Solana
+test-ledger/
+.anchor/
+deploy/
+
+# SSL certificates (local development)
+*.crt
+*.key
+*.csr
+ssl/
+
+# Package files
+*.tar
+*.tar.gz
+*.zip
+*.rar
+*.7z
+
+# Backup files
+backup/
+backups/
+*.backup
+
+# Local configuration
+local.config.js
+config.local.js
+
+# Session data
+sessions/
+*.session
+
+# Cache
+.cache/
+*.cache
+
+# Uploaded files (if any)
+uploads/
+public/uploads/
+
+# Generated files
+generated/
+*.generated.*
+
+# Ignore test wallets except the example
+test-wallet-*.json
+!test-wallet-example.json
+
+# Ignore all .env files except .env.example
+!.env.example
+!airdrop-backend/.env.example

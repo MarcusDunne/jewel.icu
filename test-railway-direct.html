@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Railway Direct Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-break: break-all;
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+        }
+        .error {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .success {
+            background: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+    </style>
+</head>
+<body>
+    <h1>Railway Direct Connection Test</h1>
+    
+    <div class="test-section">
+        <h2>Your Railway URL</h2>
+        <p><strong>https://jewel-icu-airdrop-production-561b.up.railway.app</strong></p>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 1: Direct Browser Access</h2>
+        <p>Click the link below to test in a new tab:</p>
+        <a href="https://jewel-icu-airdrop-production-561b.up.railway.app" target="_blank">
+            Open Railway App in New Tab
+        </a>
+        <p>You should see a JSON response like: {"message":"Jewel ICU Airdrop API","status":"running"...}</p>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 2: Fetch Root Endpoint</h2>
+        <button onclick="testRoot()">Test Root Endpoint</button>
+        <div id="rootResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 3: Fetch with Different Methods</h2>
+        <button onclick="testWithFetch()">Test with Fetch</button>
+        <button onclick="testWithXHR()">Test with XMLHttpRequest</button>
+        <div id="methodResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 4: Check Response Headers</h2>
+        <button onclick="checkHeaders()">Check Headers</button>
+        <div id="headerResult" class="result"></div>
+    </div>
+
+    <script>
+        const RAILWAY_URL = 'https://jewel-icu-airdrop-production-561b.up.railway.app';
+
+        async function testRoot() {
+            const resultDiv = document.getElementById('rootResult');
+            resultDiv.textContent = 'Testing...';
+            
+            try {
+                const response = await fetch(RAILWAY_URL);
+                const contentType = response.headers.get('content-type');
+                const text = await response.text();
+                
+                resultDiv.className = 'result ' + (response.ok ? 'success' : 'error');
+                resultDiv.textContent = `Status: ${response.status} ${response.statusText}
+Content-Type: ${contentType}
+Response:
+${text.substring(0, 500)}${text.length > 500 ? '...' : ''}`;
+                
+                // Try to parse as JSON
+                try {
+                    const json = JSON.parse(text);
+                    resultDiv.textContent += '\n\nParsed JSON:\n' + JSON.stringify(json, null, 2);
+                } catch (e) {
+                    resultDiv.textContent += '\n\nNot valid JSON - this might be an error page';
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `Error: ${error.message}`;
+            }
+        }
+
+        async function testWithFetch() {
+            const resultDiv = document.getElementById('methodResult');
+            resultDiv.textContent = 'Testing with Fetch...';
+            
+            try {
+                const response = await fetch(RAILWAY_URL, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                    },
+                    mode: 'cors'
+                });
+                
+                const text = await response.text();
+                resultDiv.className = 'result ' + (response.ok ? 'success' : 'error');
+                resultDiv.textContent = `Fetch Result:
+Status: ${response.status}
+Response: ${text.substring(0, 200)}...`;
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `Fetch Error: ${error.message}`;
+            }
+        }
+
+        function testWithXHR() {
+            const resultDiv = document.getElementById('methodResult');
+            resultDiv.textContent = 'Testing with XMLHttpRequest...';
+            
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', RAILWAY_URL, true);
+            xhr.setRequestHeader('Accept', 'application/json');
+            
+            xhr.onload = function() {
+                resultDiv.className = 'result ' + (xhr.status === 200 ? 'success' : 'error');
+                resultDiv.textContent = `XMLHttpRequest Result:
+Status: ${xhr.status}
+Response: ${xhr.responseText.substring(0, 200)}...`;
+            };
+            
+            xhr.onerror = function() {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = 'XMLHttpRequest Error: Network error';
+            };
+            
+            xhr.send();
+        }
+
+        async function checkHeaders() {
+            const resultDiv = document.getElementById('headerResult');
+            resultDiv.textContent = 'Checking headers...';
+            
+            try {
+                const response = await fetch(RAILWAY_URL, { method: 'HEAD' });
+                
+                let headers = 'Response Headers:\n';
+                for (let [key, value] of response.headers) {
+                    headers += `${key}: ${value}\n`;
+                }
+                
+                resultDiv.className = 'result';
+                resultDiv.textContent = headers;
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `Error: ${error.message}`;
+            }
+        }
+
+        // Auto-test on load
+        window.onload = () => {
+            console.log('Testing Railway URL:', RAILWAY_URL);
+        };
+    </script>
+</body>
+</html>

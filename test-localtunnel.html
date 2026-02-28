@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LocalTunnel Test</title>
+</head>
+<body>
+    <h1>LocalTunnel API Test</h1>
+    <button onclick="testAPI()">Test API Connection</button>
+    <div id="result"></div>
+
+    <script>
+        async function testAPI() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Testing...';
+            
+            try {
+                // Test 1: Health check
+                const healthResponse = await fetch('https://shiny-planes-move.loca.lt/api/health');
+                const healthData = await healthResponse.json();
+                resultDiv.innerHTML += '<br>✅ Health Check: ' + JSON.stringify(healthData);
+                
+                // Test 2: CORS test
+                const corsResponse = await fetch('https://shiny-planes-move.loca.lt/api/airdrop/status/test', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include'
+                });
+                
+                if (corsResponse.ok) {
+                    resultDiv.innerHTML += '<br>✅ CORS is working!';
+                } else {
+                    resultDiv.innerHTML += '<br>❌ CORS Error: ' + corsResponse.status;
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML += '<br>❌ Error: ' + error.message;
+                console.error('Full error:', error);
+            }
+        }
+    </script>
+</body>
+</html>

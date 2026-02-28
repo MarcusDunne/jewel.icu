@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jewel International Currency Unit</title>
+    
+    <!-- Solana Web3 and Wallet Adapter Dependencies -->
+    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+    <script src="https://unpkg.com/@solana/wallet-adapter-wallets@latest/lib/index.iife.min.js"></script>
+    <script src="https://unpkg.com/@solana/spl-token@latest/lib/index.iife.min.js"></script>
+    <script src="https://unpkg.com/@project-serum/anchor@latest/dist/browser/anchor.js"></script>
+    
+    <!-- Google reCAPTCHA v3 -->
+    <script src="https://www.google.com/recaptcha/api.js?render=YOUR_RECAPTCHA_SITE_KEY"></script>
+    
+    <style>
+        /* Copy all existing styles from your current index.html */
+        /* ... existing styles ... */
+        
+        /* Additional styles for production features */
+        .airdrop-status {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+        }
+        
+        .airdrop-success {
+            color: #4CAF50;
+        }
+        
+        .airdrop-error {
+            color: #f44336;
+        }
+        
+        .transaction-link {
+            color: #FFD700;
+            text-decoration: none;
+            font-size: 12px;
+            margin-top: 5px;
+            display: inline-block;
+        }
+        
+        .transaction-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <!-- Copy all existing HTML structure from your current index.html -->
+    <!-- ... existing HTML ... -->
+    
+    <script>
+        // Production Airdrop Configuration
+        const AIRDROP_API_URL = 'https://jewel-icu-airdrop-production-561b.up.railway.app'; // Railway production API URL
+        const RECAPTCHA_SITE_KEY = 'YOUR_RECAPTCHA_SITE_KEY'; // Optional - add your reCAPTCHA key when ready
+        
+        // Updated Airdrop functionality for production
+        class JewelAirdrop {
+            constructor() {
+                this.JEWEL_ICU_MINT = '37ApeZ2X8dwKZkV22wDqLzDFh4QRkTMSvkc3uau6pump';
+                this.airdropBtn = document.getElementById('airdropBtn');
+                this.isProcessing = false;
+                this.attachEventListeners();
+                
+                // Check airdrop status on load
+                this.checkAirdropStatus();
+            }
+
+            attachEventListeners() {
+                if (this.airdropBtn) {
+                    this.airdropBtn.addEventListener('click', () => this.handleAirdrop());
+                }
+                
+                // Listen for wallet connection changes
+                window.addEventListener('walletConnected', () => this.checkAirdropStatus());
+                window.addEventListener('walletDisconnected', () => this.hideAirdropButton());
+            }
+            
+            async checkAirdropStatus() {
+                if (!walletConnection || !walletConnection.connected) return;
+                
+                try {
+                    const walletAddress = walletConnection.provider.publicKey.toString();
+                    const response = await fetch(`${AIRDROP_API_URL}/api/airdrop/status/${walletAddress}`);
+                    const data = await response.json();
+                    
+                    if (data.claimed) {
+                        this.showAlreadyClaimed(data);
+                    } else {
+                        this.showAirdropButton();
+                    }
+                } catch (error) {
+                    console.error('Error checking airdrop status:', error);
+                    this.showAirdropButton(); // Show button on error
+                }
+            }
+            
+            showAirdropButton() {
+                if (this.airdropBtn) {
+                    this.airdropBtn.style.display = 'flex';
+                    this.airdropBtn.disabled = false;
+                }
+            }
+            
+            hideAirdropButton() {
+                if (this.airdropBtn) {
+                    this.airdropBtn.style.display = 'none';
+                }
+            }
+            
+            showAlreadyClaimed(claimData) {
+                if (this.airdropBtn) {
+                    this.airdropBtn.style.display = 'flex';
+                    this.airdropBtn.disabled = true;
+                    this.airdropBtn.innerHTML = `
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                        Already Claimed
+                    `;
+                    
+                    // Add status text
+                    const statusDiv = document.createElement('div');
+                    statusDiv.className = 'airdrop-status airdrop-success';
+                    statusDiv.textContent = `Claimed on ${new Date(claimData.claimedAt).toLocaleDateString()}`;
+                    this.airdropBtn.parentNode.appendChild(statusDiv);
+                    
+                    if (claimData.transactionSignature) {
+                        const txLink = document.createElement('a');
+                        txLink.href = `https://solscan.io/tx/${claimData.transactionSignature}`;
+                        txLink.target = '_blank';
+                        txLink.className = 'transaction-link';
+                        txLink.textContent = 'View Transaction';
+                        this.airdropBtn.parentNode.appendChild(txLink);
+                    }
+                }
+            }
+
+            async handleAirdrop() {
+                if (this.isProcessing) return;
+                
+                if (!walletConnection || !walletConnection.connected) {
+                    walletConnection.showToast('Please connect your wallet first', 'error');
+                    return;
+                }
+
+                this.isProcessing = true;
+                this.setButtonLoading(true);
+
+                try {
+                    // Get reCAPTCHA token
+                    const captchaToken = await this.getCaptchaToken();
+                    
+                    // Get wallet signature for verification (optional but recommended)
+                    const signature = await this.getWalletSignature();
+                    
+                    // Build payload without null fields to satisfy backend validators
+                    const payload = { walletAddress: walletConnection.provider.publicKey.toString() };
+                    if (captchaToken) payload.captchaToken = captchaToken;
+                    if (signature)    payload.signature    = signature;
+
+                    // Call production API
+                    const response = await fetch(`${AIRDROP_API_URL}/api/airdrop/claim`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        walletConnection.showToast('🎉 Airdrop successful! Check your wallet.', 'success');
+                        
+                        // Show transaction link
+                        if (data.transactionSignature) {
+                            const txUrl = `https://solscan.io/tx/${data.transactionSignature}`;
+                            console.log('Transaction:', txUrl);
+                            
+                            // Update button to show claimed status
+                            this.showAlreadyClaimed({
+                                claimedAt: new Date().toISOString(),
+                                transactionSignature: data.transactionSignature
+                            });
+                        }
+                    } else {
+                        // Handle specific error cases
+                        if (response.status === 429) {
+                            walletConnection.showToast('Too many requests. Please try again later.', 'error');
+                        } else if (response.status === 400 && data.error.includes('already claimed')) {
+                            walletConnection.showToast('You have already claimed your airdrop.', 'info');
+                            this.checkAirdropStatus(); // Refresh status
+                        } else {
+                            walletConnection.showToast(data.error || 'Airdrop failed. Please try again.', 'error');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Airdrop error:', error);
+                    walletConnection.showToast('Network error. Please check your connection and try again.', 'error');
+                } finally {
+                    this.setButtonLoading(false);
+                    this.isProcessing = false;
+                }
+            }
+            
+            async getCaptchaToken() {
+                try {
+                    return await grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'claim_airdrop' });
+                } catch (error) {
+                    console.error('CAPTCHA error:', error);
+                    return null; // Continue without CAPTCHA if it fails
+                }
+            }
+            
+            async getWalletSignature() {
+                try {
+                    const message = JSON.stringify({
+                        action: 'claim_airdrop',
+                        timestamp: Date.now(),
+                        nonce: this.generateNonce()
+                    });
+                    
+                    const encodedMessage = new TextEncoder().encode(message);
+                    const signature = await walletConnection.provider.signMessage(encodedMessage);
+                    
+                    return {
+                        message: message,
+                        signature: bs58.encode(signature),
+                        publicKey: walletConnection.provider.publicKey.toString()
+                    };
+                } catch (error) {
+                    console.error('Signature error:', error);
+                    return null; // Continue without signature if user rejects
+                }
+            }
+            
+            generateNonce() {
+                return Array.from(crypto.getRandomValues(new Uint8Array(16)))
+                    .map(b => b.toString(16).padStart(2, '0'))
+                    .join('');
+            }
+
+            setButtonLoading(loading) {
+                if (!this.airdropBtn) return;
+                
+                if (loading) {
+                    this.airdropBtn.classList.add('loading');
+                    this.airdropBtn.disabled = true;
+                    this.airdropBtn.innerHTML = `
+                        <svg class="animate-spin" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" opacity="0.25"/>
+                            <path d="M12 2C6.48 2 2 6.48 2 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        Processing...
+                    `;
+                } else {
+                    this.airdropBtn.classList.remove('loading');
+                    this.airdropBtn.disabled = false;
+                    this.airdropBtn.innerHTML = `
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2L12 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            <path d="M12 14L8 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            <path d="M12 14L16 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            <path d="M5 16C5 16 6.5 14 12 14C17.5 14 19 16 19 16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            <path d="M3 20C3 20 5 17 12 17C19 17 21 20 21 20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        Claim Airdrop
+                    `;
+                }
+            }
+        }
+        
+        // Initialize airdrop when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            window.jewelAirdrop = new JewelAirdrop();
+        });
+        
+        // Copy all other existing JavaScript from your current index.html
+        // ... existing JavaScript ...
+    </script>
+</body>
+</html>

@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Token Lock Interface - Jewel.icu</title>
+    
+    <!-- Solana Web3 and Dependencies -->
+    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+    <script src="https://unpkg.com/@solana/spl-token@latest/lib/index.iife.min.js"></script>
+    <script src="https://unpkg.com/@project-serum/anchor@latest/dist/browser/anchor.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #000;
+            color: #fff;
+            padding: 20px;
+        }
+
+        .token-lock-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            color: #FFD700;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .header p {
+            color: #ccc;
+            font-size: 1.2rem;
+        }
+
+        /* Lock Form Section */
+        .lock-section {
+            background: rgba(255, 215, 0, 0.1);
+            border: 2px solid #FFD700;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        .lock-section h2 {
+            color: #FFD700;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #FFD700;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 215, 0, 0.5);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #FFD700;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+        }
+
+        .lock-duration-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .duration-btn {
+            padding: 10px;
+            background: rgba(255, 215, 0, 0.2);
+            border: 1px solid #FFD700;
+            border-radius: 8px;
+            color: #FFD700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .duration-btn:hover, .duration-btn.active {
+            background: #FFD700;
+            color: #000;
+        }
+
+        .lock-button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: #000;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .lock-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(255, 215, 0, 0.5);
+        }
+
+        .lock-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Lock Status Section */
+        .status-section {
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid rgba(255, 215, 0, 0.5);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .status-section h2 {
+            color: #FFD700;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+        }
+
+        .lock-card {
+            background: rgba(255, 215, 0, 0.05);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .lock-card:hover {
+            border-color: #FFD700;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
+        }
+
+        .lock-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .info-label {
+            color: #999;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            color: #FFD700;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .unlock-button {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .unlock-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+        }
+
+        .unlock-button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .time-remaining {
+            color: #FFA500;
+            font-weight: bold;
+        }
+
+        .unlockable {
+            color: #4CAF50;
+        }
+
+        /* Detection Section */
+        .detection-section {
+            background: rgba(33, 150, 243, 0.1);
+            border: 2px solid #2196F3;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .detection-section h2 {
+            color: #2196F3;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+        }
+
+        .detect-button {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+        }
+
+        .detect-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.4);
+        }
+
+        /* Loading and Messages */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 215, 0, 0.3);
+            border-radius: 50%;
+            border-top-color: #FFD700;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+
+        .message.success {
+            background: rgba(76, 175, 80, 0.2);
+            border: 1px solid #4CAF50;
+            color: #4CAF50;
+        }
+
+        .message.error {
+            background: rgba(244, 67, 54, 0.2);
+            border: 1px solid #f44336;
+            color: #f44336;
+        }
+
+        .message.info {
+            background: rgba(33, 150, 243, 0.2);
+            border: 1px solid #2196F3;
+            color: #2196F3;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .lock-section, .status-section, .detection-section {
+                padding: 20px;
+            }
+
+            .lock-duration-options {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .info-item {
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="token-lock-container">
+        <div class="header">
+            <h1>Token Lock Interface</h1>
+            <p>Lock your SPL tokens in liquidity pools with time-based vesting</p>
+        </div>
+
+        <!-- Lock Tokens Section -->
+        <div class="lock-section">
+            <h2>Lock Tokens</h2>
+            <form id="lockForm">
+                <div class="form-group">
+                    <label for="tokenMint">Token Mint Address</label>
+                    <input type="text" id="tokenMint" placeholder="Enter SPL token mint address" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="lockAmount">Amount to Lock</label>
+                    <input type="number" id="lockAmount" placeholder="0.0" step="0.000000001" min="0" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Lock Duration</label>
+                    <div class="lock-duration-options">
+                        <button type="button" class="duration-btn" data-duration="3600">1 Hour</button>
+                        <button type="button" class="duration-btn" data-duration="86400">1 Day</button>
+                        <button type="button" class="duration-btn" data-duration="604800">1 Week</button>
+                        <button type="button" class="duration-btn" data-duration="2592000">30 Days</button>
+                        <button type="button" class="duration-btn" data-duration="7776000">90 Days</button>
+                        <button type="button" class="duration-btn" data-duration="31536000">1 Year</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="customDuration">Custom Duration (seconds)</label>
+                    <input type="number" id="customDuration" placeholder="Enter custom duration in seconds" min="60">
+                </div>
+
+                <button type="submit" class="lock-button" id="lockButton">
+                    Lock Tokens
+                </button>
+            </form>
+
+            <div id="lockMessage"></div>
+        </div>
+
+        <!-- Lock Status Section -->
+        <div class="status-section">
+            <h2>Your Locked Tokens</h2>
+            <div id="userLocks">
+                <p style="color: #999;">Connect wallet to view your locked tokens</p>
+            </div>
+        </div>
+
+        <!-- Detection Section -->
+        <div class="detection-section">
+            <h2>Token Lock Detection</h2>
+            <p style="margin-bottom: 20px;">Check lock status for any token or wallet address</p>
+            
+            <div class="form-group">
+                <label for="detectTokenMint">Token Mint Address</label>
+                <input type="text" id="detectTokenMint" placeholder="Enter token mint to check">
+            </div>
+
+            <div class="form-group">
+                <label for="detectWallet">Wallet Address (Optional)</label>
+                <input type="text" id="detectWallet" placeholder="Leave empty to check all locks for token">
+            </div>
+
+            <button class="detect-button" onclick="detectTokenLocks()">
+                Detect Locks
+            </button>
+            <button class="detect-button" onclick="getVaultInfo()">
+                Get Vault Info
+            </button>
+
+            <div id="detectionResults" style="margin-top: 20px;"></div>
+        </div>
+    </div>
+
+    <!-- Include the token lock utilities -->
+    <script type="module">
+        import { TokenLockClient, tokenLockUtils } from './js/tokenLock.js';
+
+        // Global variables
+        let wallet = null;
+        let connection = null;
+        let tokenLockClient = null;
+        let selectedDuration = null;
+
+        // Initialize on page load
+        window.addEventListener('load', async () => {
+            // Initialize Solana connection
+            const network = 'devnet'; // Change to 'mainnet-beta' for production
+            connection = new solanaWeb3.Connection(
+                solanaWeb3.clusterApiUrl(network),
+                'confirmed'
+            );
+
+            // Check if wallet is connected (this would come from your main wallet connection)
+            checkWalletConnection();
+
+            // Set up event listeners
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // Duration buttons
+            document.querySelectorAll('.duration-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.duration-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    selectedDuration = parseInt(this.dataset.duration);
+                    document.getElementById('customDuration').value = '';
+                });
+            });
+
+            // Custom duration input
+            document.getElementById('customDuration').addEventListener('input', function() {
+                if (this.value) {
+                    document.querySelectorAll('.duration-btn').forEach(b => b.classList.remove('active'));
+                    selectedDuration = parseInt(this.value);
+                }
+            });
+
+            // Lock form submission
+            document.getElementById('lockForm').addEventListener('submit', handleLockTokens);
+        }
+
+        async function checkWalletConnection() {
+            // This would integrate with your existing wallet connection
+            // For now, we'll check if Phantom is available
+            if (window.solana && window.solana.isPhantom) {
+                try {
+                    const response = await window.solana.connect({ onlyIfTrusted: true });
+                    wallet = window.solana;
+                    tokenLockClient = tokenLockUtils.createClient(connection, wallet);
+                    await loadUserLocks();
+                } catch (err) {
+                    console.log('Wallet not connected');
+                }
+            }
+        }
+
+        async function handleLockTokens(e) {
+            e.preventDefault();
+            
+            if (!wallet || !tokenLockClient) {
+                showMessage('lockMessage', 'Please connect your wallet first', 'error');
+                return;
+            }
+
+            const tokenMint = document.getElementById('tokenMint').value;
+            const amount = document.getElementById('lockAmount').value;
+            const duration = selectedDuration || parseInt(document.getElementById('customDuration').value);
+
+            if (!tokenMint || !amount || !duration) {
+                showMessage('lockMessage', 'Please fill in all fields', 'error');
+                return;
+            }
+
+            const lockButton = document.getElementById('lockButton');
+            lockButton.disabled = true;
+            lockButton.innerHTML = '<span class="loading"></span> Locking...';
+
+            try {
+                // Check if vault exists, create if not
+                const vaultExists = await tokenLockClient.vaultExists(new solanaWeb3.PublicKey(tokenMint));
+                
+                if (!vaultExists) {
+                    showMessage('lockMessage', 'Creating vault for token...', 'info');
+                    const vaultResult = await tokenLockClient.initializeVault(new solanaWeb3.PublicKey(tokenMint));
+                    
+                    if (!vaultResult.success) {
+                        throw new Error(vaultResult.error);
+                    }
+                }
+
+                // Lock tokens
+                const parsedAmount = tokenLockUtils.parseTokenAmount(amount);
+                const result = await tokenLockClient.lockTokens(
+                    new solanaWeb3.PublicKey(tokenMint),
+                    parsedAmount,
+                    duration
+                );
+
+                if (result.success) {
+                    showMessage('lockMessage', 
+                        `Successfully locked ${amount} tokens until ${result.unlockTimestamp.toLocaleString()}. 
+                        Transaction: ${result.signature}`, 
+                        'success'
+                    );
+                    
+                    // Reload user locks
+                    await loadUserLocks();
+                    
+                    // Clear form
+                    document.getElementById('lockForm').reset();
+                    selectedDuration = null;
+                    document.querySelectorAll('.duration-btn').forEach(b => b.classList.remove('active'));
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (error) {
+                showMessage('lockMessage', `Error: ${error.message}`, 'error');
+            } finally {
+                lockButton.disabled = false;
+                lockButton.innerHTML = 'Lock Tokens';
+            }
+        }
+
+        async function loadUserLocks() {
+            if (!wallet || !tokenLockClient) return;
+
+            const userLocksDiv = document.getElementById('userLocks');
+            userLocksDiv.innerHTML = '<p class="loading"></p>';
+
+            try {
+                // For demo, we'll check a few common token mints
+                // In production, you'd want to get this from user's token accounts
+                const tokenMints = [
+                    // Add your token mints here
+                ];
+
+                const locks = [];
+                
+                for (const mint of tokenMints) {
+                    const lockInfo = await tokenLockClient.getLockInfo(
+                        new solanaWeb3.PublicKey(mint),
+                        wallet.publicKey
+                    );
+                    
+                    if (lockInfo.success && lockInfo.lockInfo) {
+                        locks.push({
+                            mint,
+                            ...lockInfo.lockInfo
+                        });
+                    }
+                }
+
+                if (locks.length === 0) {
+                    userLocksDiv.innerHTML = '<p style="color: #999;">No locked tokens found</p>';
+                } else {
+                    userLocksDiv.innerHTML = locks.map(lock => createLockCard(lock)).join('');
+                }
+            } catch (error) {
+                userLocksDiv.innerHTML = '<p style="color: #f44336;">Error loading locks</p>';
+            }
+        }
+
+        function createLockCard(lock) {
+            const canUnlock = lock.canUnlock;
+            const timeClass = canUnlock ? 'unlockable' : 'time-remaining';
+            
+            return `
+                <div class="lock-card">
+                    <div class="lock-info">
+                        <div class="info-item">
+                            <span class="info-label">Amount Locked</span>
+                            <span class="info-value">${tokenLockUtils.formatTokenAmount(lock.amount)}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Unlock Time</span>
+                            <span class="info-value">${lock.unlockTimestamp.toLocaleString()}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Time Remaining</span>
+                            <span class="info-value ${timeClass}">${lock.timeRemainingFormatted}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Status</span>
+                            <span class="info-value">${lock.isUnlocked ? 'Unlocked' : 'Locked'}</span>
+                        </div>
+                    </div>
+                    ${canUnlock && !lock.isUnlocked ? `
+                        <button class="unlock-button" onclick="unlockTokens('${lock.mint}')">
+                            Unlock Tokens
+                        </button>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        window.unlockTokens = async function(tokenMint) {
+            if (!wallet || !tokenLockClient) {
+                alert('Please connect your wallet first');
+                return;
+            }
+
+            if (confirm('Are you sure you want to unlock these tokens?')) {
+                try {
+                    const result = await tokenLockClient.unlockTokens(new solanaWeb3.PublicKey(tokenMint));
+                    
+                    if (result.success) {
+                        alert(`Tokens unlocked successfully! Transaction: ${result.signature}`);
+                        await loadUserLocks();
+                    } else {
+                        throw new Error(result.error);
+                    }
+                } catch (error) {
+                    alert(`Error unlocking tokens: ${error.message}`);
+                }
+            }
+        };
+
+        window.detectTokenLocks = async function() {
+            const tokenMint = document.getElementById('detectTokenMint').value.trim();
+            const walletAddress = document.getElementById('detectWallet').value.trim();
+            
+            if (!tokenMint) {
+                showMessage('detectionResults', 'Please enter a token mint address', 'error');
+                return;
+            }
+
+            // Validate token mint address
+            try {
+                new solanaWeb3.PublicKey(tokenMint);
+            } catch (error) {
+                showMessage('detectionResults', 'Invalid token mint address format', 'error');
+                return;
+            }
+
+            // Validate wallet address if provided
+            if (walletAddress) {
+                try {
+                    new solanaWeb3.PublicKey(walletAddress);
+                } catch (error) {
+                    showMessage('detectionResults', 'Invalid wallet address format', 'error');
+                    return;
+                }
+            }
+
+            const resultsDiv = document.getElementById('detectionResults');
+            resultsDiv.innerHTML = '<p><span class="loading"></span> Checking for locks...</p>';
+
+            try {
+                // Create a temporary client for detection if needed
+                let detectionClient = tokenLockClient;
+                if (!detectionClient) {
+                    // Create a read-only client if wallet not connected
+                    const dummyWallet = {
+                        publicKey: solanaWeb3.Keypair.generate().publicKey,
+                        signTransaction: async () => { throw new Error('Read-only mode'); },
+                        signAllTransactions: async () => { throw new Error('Read-only mode'); }
+                    };
+                    detectionClient = tokenLockUtils.createClient(connection, dummyWallet);
+                }
+
+                // First check if the vault exists
+                const vaultExists = await detectionClient.vaultExists(new solanaWeb3.PublicKey(tokenMint));
+                
+                if (!vaultExists) {
+                    resultsDiv.innerHTML = `
+                        <div class="message info">
+                            <p><strong>No vault found for this token.</strong></p>
+                            <p>This token has not been initialized for locking yet.</p>
+                            <p>Token Mint: ${tokenMint}</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                if (walletAddress) {
+                    // Get specific user's lock
+                    const lockInfo = await detectionClient.getLockInfo(
+                        new solanaWeb3.PublicKey(tokenMint),
+                        new solanaWeb3.PublicKey(walletAddress)
+                    );
+                    
+                    if (lockInfo.success && lockInfo.lockInfo) {
+                        resultsDiv.innerHTML = `
+                            <h3>Lock Details for ${walletAddress.substring(0, 8)}...</h3>
+                            ${createLockCard({mint: tokenMint, ...lockInfo.lockInfo})}
+                        `;
+                    } else {
+                        resultsDiv.innerHTML = `
+                            <div class="message info">
+                                <p>No locks found for wallet: ${walletAddress.substring(0, 8)}...</p>
+                                <p>Token: ${tokenMint.substring(0, 8)}...</p>
+                                ${lockInfo.error ? `<p style="font-size: 0.9em; color: #999;">Details: ${lockInfo.error}</p>` : ''}
+                            </div>
+                        `;
+                    }
+                } else {
+                    // Get all locks for the token
+                    const allLocks = await detectionClient.getAllLockRecords(new solanaWeb3.PublicKey(tokenMint));
+                    
+                    if (allLocks.success && allLocks.records.length > 0) {
+                        resultsDiv.innerHTML = `
+                            <h3>All Locks for Token (${allLocks.records.length} found)</h3>
+                            <p style="color: #999; margin-bottom: 15px;">Token: ${tokenMint.substring(0, 20)}...</p>
+                            ${allLocks.records.map(record => `
+                                <div class="lock-card">
+                                    <div class="lock-info">
+                                        <div class="info-item">
+                                            <span class="info-label">Owner</span>
+                                            <span class="info-value" style="font-size: 0.9em;">${record.owner.substring(0, 20)}...</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="info-label">Amount</span>
+                                            <span class="info-value">${tokenLockUtils.formatTokenAmount(record.amount)}</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="info-label">Unlock Time</span>
+                                            <span class="info-value">${record.unlockTimestamp.toLocaleString()}</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="info-label">Status</span>
+                                            <span class="info-value ${record.isUnlocked ? '' : (record.canUnlock ? 'unlockable' : 'time-remaining')}">
+                                                ${record.isUnlocked ? 'Unlocked' : (record.canUnlock ? 'Ready to Unlock' : `Locked (${record.timeRemaining}s)`)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        `;
+                    } else {
+                        resultsDiv.innerHTML = `
+                            <div class="message info">
+                                <p>No locks found for this token.</p>
+                                <p>Token: ${tokenMint.substring(0, 20)}...</p>
+                                <p style="font-size: 0.9em; color: #999;">The vault exists but no tokens are currently locked.</p>
+                            </div>
+                        `;
+                    }
+                }
+            } catch (error) {
+                console.error('Detection error:', error);
+                resultsDiv.innerHTML = `
+                    <div class="message error">
+                        <p><strong>Error detecting locks:</strong></p>
+                        <p>${error.message}</p>
+                        <p style="font-size: 0.9em; color: #999; margin-top: 10px;">
+                            Make sure you're using a valid SPL token mint address and that you're connected to the correct network (${network}).
+                        </p>
+                    </div>
+                `;
+            }
+        };
+
+        window.getVaultInfo = async function() {
+            const tokenMint = document.getElementById('detectTokenMint').value.trim();
+            
+            if (!tokenMint) {
+                showMessage('detectionResults', 'Please enter a token mint address', 'error');
+                return;
+            }
+
+            // Validate token mint address
+            try {
+                new solanaWeb3.PublicKey(tokenMint);
+            } catch (error) {
+                showMessage('detectionResults', 'Invalid token mint address format', 'error');
+                return;
+            }
+
+            const resultsDiv = document.getElementById('detectionResults');
+            resultsDiv.innerHTML = '<p><span class="loading"></span> Fetching vault information...</p>';
+
+            try {
+                // Create a temporary client for detection if needed
+                let detectionClient = tokenLockClient;
+                if (!detectionClient) {
+                    const dummyWallet = {
+                        publicKey: solanaWeb3.Keypair.generate().publicKey,
+                        signTransaction: async () => { throw new Error('Read-only mode'); },
+                        signAllTransactions: async () => { throw new Error('Read-only mode'); }
+                    };
+                    detectionClient = tokenLockUtils.createClient(connection, dummyWallet);
+                }
+
+                const vaultInfo = await detectionClient.getVaultInfo(new solanaWeb3.PublicKey(tokenMint));
+                
+                if (vaultInfo.success && vaultInfo.vaultInfo) {
+                    resultsDiv.innerHTML = `
+                        <h3>Vault Information</h3>
+                        <div class="lock-card">
+                            <div class="lock-info">
+                                <div class="info-item">
+                                    <span class="info-label">Vault Address</span>
+                                    <span class="info-value" style="font-size: 0.9em;">${vaultInfo.vaultInfo.vaultAddress}</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Authority</span>
+                                    <span class="info-value" style="font-size: 0.9em;">${vaultInfo.vaultInfo.authority}</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Token Mint</span>
+                                    <span class="info-value" style="font-size: 0.9em;">${vaultInfo.vaultInfo.tokenMint}</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Total Locked</span>
+                                    <span class="info-value">${tokenLockUtils.formatTokenAmount(vaultInfo.vaultInfo.totalLocked)} tokens</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    resultsDiv.innerHTML = `
+                        <div class="message info">
+                            <p><strong>Vault not found for this token.</strong></p>
+                            <p>Token: ${tokenMint.substring(0, 20)}...</p>
+                            ${vaultInfo.error ? `<p style="font-size: 0.9em; color: #999;">Details: ${vaultInfo.error}</p>` : ''}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Vault info error:', error);
+                resultsDiv.innerHTML = `
+                    <div class="message error">
+                        <p><strong>Error fetching vault information:</strong></p>
+                        <p>${error.message}</p>
+                        <p style="font-size: 0.9em; color: #999; margin-top: 10px;">
+                            Make sure you're using a valid SPL token mint address and that you're connected to the correct network (${network}).
+                        </p>
+                    </div>
+                `;
+            }
+        };
+
+        function showMessage(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="message ${type}">${message}</div>`;
+            
+            if (type !== 'error') {
+                setTimeout(() => {
+                    element.innerHTML = '';
+                }, 5000);
+            }
+        }
+    </script>
+</body>
+</html>

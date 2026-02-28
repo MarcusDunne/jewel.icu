@@ -1,0 +1,24 @@
+# Test Railway Deployment with curl
+
+# 1. Test root endpoint
+curl https://jewel-icu-airdrop-production-561b.up.railway.app
+
+# 2. Test with headers
+curl -H "Accept: application/json" https://jewel-icu-airdrop-production-561b.up.railway.app
+
+# 3. Test health endpoint
+curl https://jewel-icu-airdrop-production-561b.up.railway.app/health
+
+# 4. Verbose output to see what's happening
+curl -v https://jewel-icu-airdrop-production-561b.up.railway.app
+
+# If you're getting HTML, it's likely one of these:
+# - Railway's "Application failed to respond" page
+# - Railway's "Deployment in progress" page
+# - An error page from Railway
+
+# Check your Railway dashboard:
+# 1. Go to https://railway.app/dashboard
+# 2. Click on your project
+# 3. Check the "Deployments" tab for status
+# 4. Check the "Logs" tab for any errors

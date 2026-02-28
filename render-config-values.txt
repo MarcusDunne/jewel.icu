@@ -1,0 +1,99 @@
+RENDER CONFIGURATION VALUES
+===========================
+
+Copy and paste these values into Render when setting up your service.
+
+1. WEB SERVICE CONFIGURATION
+----------------------------
+Name: jewel-icu-airdrop-api
+Region: Oregon (US West) or closest to you
+Branch: main
+Root Directory: airdrop-backend
+Runtime: Node
+Build Command: npm install
+Start Command: npm start
+Plan: Free (or Starter for production)
+
+2. ENVIRONMENT VARIABLES
+------------------------
+Copy each line below into Render's environment variables section:
+
+DATABASE_URL=[Will be provided by Render after creating PostgreSQL database]
+PORT=3001
+NODE_ENV=production
+
+# Solana Configuration
+AIRDROP_PRIVATE_KEY=[Your base64 encoded private key - see instructions below]
+TOKEN_MINT_ADDRESS=[Your SPL token mint address]
+AIRDROP_AMOUNT=1000000000
+
+# Security
+RECAPTCHA_SECRET_KEY=[Your Google reCAPTCHA v3 secret key]
+ADMIN_API_KEY=[Generate using command below]
+ALLOWED_ORIGINS=https://your-frontend-domain.com
+
+# Rate Limiting (optional)
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX_REQUESTS=10
+
+3. POSTGRESQL DATABASE CONFIGURATION
+------------------------------------
+Name: jewel-icu-airdrop-db
+Database: [Leave as generated]
+User: [Leave as generated]
+Region: [Same as web service]
+PostgreSQL Version: 15
+Plan: Free
+
+4. HOW TO GENERATE REQUIRED VALUES
+-----------------------------------
+
+A. Generate ADMIN_API_KEY:
+Run this command in your terminal:
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+
+Example output: 7f3a8b2c9d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a
+
+B. Get AIRDROP_PRIVATE_KEY:
+If you don't have a wallet yet, create one:
+cd airdrop-backend
+node create-wallet.js
+
+Then convert to base64:
+node convert-key.js
+
+C. Get RECAPTCHA_SECRET_KEY:
+1. Go to https://www.google.com/recaptcha/admin
+2. Click "+" to create new site
+3. Label: Jewel ICU Airdrop
+4. reCAPTCHA type: reCAPTCHA v3
+5. Domains: Add your frontend domain
+6. Accept terms and Submit
+7. Copy the SECRET KEY
+
+5. RENDER.YAML (Already in your repo)
+-------------------------------------
+The render.yaml file in airdrop-backend will help configure your service automatically.
+
+6. AFTER DEPLOYMENT CHECKLIST
+-----------------------------
+[ ] Copy your Render service URL
+[ ] Update frontend files with the API URL
+[ ] Test health endpoint: https://your-service.onrender.com/health
+[ ] Test with small airdrop amount first
+[ ] Monitor logs for any errors
+
+7. GITHUB SECRETS FOR CI/CD
+---------------------------
+After deployment, get these from Render:
+
+RENDER_API_KEY: 
+- Go to Account Settings → API Keys
+- Create new API key
+
+RENDER_SERVICE_ID: 
+- From your service URL: https://dashboard.render.com/web/srv-XXXXX
+- The srv-XXXXX part is your service ID
+
+RENDER_SERVICE_URL:
+- Your public service URL (e.g., https://jewel-icu-airdrop-api.onrender.com)

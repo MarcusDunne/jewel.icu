@@ -1,0 +1,140 @@
+name: Deploy to Render
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+
+env:
+  RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+  RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+
+jobs:
+  deploy:
+    name: Deploy to Render
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'production' }}
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    
+    - name: Validate environment
+      working-directory: ./airdrop-backend
+      run: |
+        # Check if required files exist
+        if [ ! -f ".env.example" ]; then
+          echo "Error: .env.example file not found"
+          exit 1
+        fi
+        
+        if [ ! -f "package.json" ]; then
+          echo "Error: package.json file not found"
+          exit 1
+        fi
+        
+        echo "Environment validation passed"
+    
+    - name: Deploy to Render
+      if: env.RENDER_API_KEY != '' && env.RENDER_SERVICE_ID != ''
+      run: |
+        curl -X POST "https://api.render.com/v1/services/${{ env.RENDER_SERVICE_ID }}/deploys" \
+          -H "Authorization: Bearer ${{ env.RENDER_API_KEY }}" \
+          -H "Content-Type: application/json" \
+          -d '{"clearCache": false}'
+    
+    - name: Wait for deployment
+      if: env.RENDER_API_KEY != '' && env.RENDER_SERVICE_ID != ''
+      run: |
+        echo "Waiting for deployment to complete..."
+        sleep 30
+        
+        # Check deployment status
+        DEPLOY_STATUS=$(curl -s "https://api.render.com/v1/services/${{ env.RENDER_SERVICE_ID }}" \
+          -H "Authorization: Bearer ${{ env.RENDER_API_KEY }}" | \
+          jq -r '.service.suspended')
+        
+        if [ "$DEPLOY_STATUS" = "true" ]; then
+          echo "Error: Service is suspended"
+          exit 1
+        fi
+        
+        echo "Deployment initiated successfully"
+    
+    - name: Notify deployment status
+      if: always()
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const status = '${{ job.status }}';
+          const environment = '${{ github.event.inputs.environment || 'production' }}';
+          const message = status === 'success' 
+            ? `✅ Deployment to ${environment} completed successfully!`
+            : `❌ Deployment to ${environment} failed!`;
+          
+          github.rest.repos.createCommitComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            commit_sha: context.sha,
+            body: message
+          });
+
+  health-check:
+    name: Post-deployment Health Check
+    needs: deploy
+    runs-on: ubuntu-latest
+    if: success()
+    
+    steps:
+    - name: Wait for service to be ready
+      run: sleep 60
+    
+    - name: Check API health
+      run: |
+        # Replace with your actual Render service URL
+        SERVICE_URL="${{ secrets.RENDER_SERVICE_URL }}"
+        
+        if [ -z "$SERVICE_URL" ]; then
+          echo "Warning: RENDER_SERVICE_URL not set, skipping health check"
+          exit 0
+        fi
+        
+        # Check health endpoint
+        HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$SERVICE_URL/health" || echo "000")
+        
+        if [ "$HTTP_STATUS" = "200" ]; then
+          echo "✅ Health check passed! API is responding."
+        else
+          echo "❌ Health check failed! HTTP status: $HTTP_STATUS"
+          exit 1
+        fi
+    
+    - name: Verify airdrop endpoint
+      run: |
+        SERVICE_URL="${{ secrets.RENDER_SERVICE_URL }}"
+        
+        if [ -z "$SERVICE_URL" ]; then
+          exit 0
+        fi
+        
+        # Check if airdrop endpoint exists
+        HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$SERVICE_URL/api/airdrop/stats" || echo "000")
+        
+        if [ "$HTTP_STATUS" = "200" ] || [ "$HTTP_STATUS" = "401" ]; then
+          echo "✅ Airdrop endpoint is accessible"
+        else
+          echo "⚠️ Warning: Airdrop endpoint returned status: $HTTP_STATUS"
+        fi

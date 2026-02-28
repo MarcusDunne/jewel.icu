@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Railway Backend</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status.online {
+            background: #28a745;
+            color: white;
+        }
+        .status.offline {
+            background: #dc3545;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Railway Backend Test</h1>
+        
+        <div class="test-section">
+            <h2>Backend URL Configuration</h2>
+            <input type="text" id="backendUrl" placeholder="Enter your Railway backend URL (e.g., https://your-app.railway.app)" />
+            <button onclick="saveUrl()">Save URL</button>
+            <div id="urlResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>1. Test Root Endpoint <span id="rootStatus" class="status"></span></h2>
+            <button onclick="testRoot()">Test Root</button>
+            <div id="rootResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>2. Test Health Check <span id="healthStatus" class="status"></span></h2>
+            <button onclick="testHealth()">Test Health</button>
+            <div id="healthResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>3. Test API Health <span id="apiHealthStatus" class="status"></span></h2>
+            <button onclick="testApiHealth()">Test API Health</button>
+            <div id="apiHealthResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>4. Test Airdrop Status <span id="airdropStatusBadge" class="status"></span></h2>
+            <button onclick="testAirdropStatus()">Test Airdrop Status</button>
+            <div id="airdropStatusResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>5. Test Airdrop Claim</h2>
+            <input type="text" id="walletAddress" placeholder="Enter Solana wallet address" />
+            <button onclick="testAirdropClaim()">Test Claim</button>
+            <div id="claimResult" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        // Load saved URL on page load
+        window.onload = function() {
+            const savedUrl = localStorage.getItem('railwayBackendUrl');
+            if (savedUrl) {
+                document.getElementById('backendUrl').value = savedUrl;
+                document.getElementById('urlResult').className = 'result info';
+                document.getElementById('urlResult').textContent = `Using saved URL: ${savedUrl}`;
+            }
+        };
+
+        function getBackendUrl() {
+            const url = document.getElementById('backendUrl').value.trim();
+            if (!url) {
+                alert('Please enter your Railway backend URL first!');
+                return null;
+            }
+            // Remove trailing slash if present
+            return url.replace(/\/$/, '');
+        }
+
+        function saveUrl() {
+            const url = document.getElementById('backendUrl').value.trim();
+            if (!url) {
+                document.getElementById('urlResult').className = 'result error';
+                document.getElementById('urlResult').textContent = 'Please enter a URL';
+                return;
+            }
+            localStorage.setItem('railwayBackendUrl', url);
+            document.getElementById('urlResult').className = 'result success';
+            document.getElementById('urlResult').textContent = `URL saved: ${url}`;
+        }
+
+        function updateStatus(elementId, isOnline) {
+            const element = document.getElementById(elementId);
+            if (isOnline) {
+                element.className = 'status online';
+                element.textContent = 'ONLINE';
+            } else {
+                element.className = 'status offline';
+                element.textContent = 'OFFLINE';
+            }
+        }
+
+        async function testRoot() {
+            const baseUrl = getBackendUrl();
+            if (!baseUrl) return;
+
+            const resultDiv = document.getElementById('rootResult');
+            resultDiv.className = 'result info';
+            resultDiv.textContent = 'Testing root endpoint...';
+
+            try {
+                const response = await fetch(`${baseUrl}/`);
+                const data = await response.json();
+                
+                updateStatus('rootStatus', response.ok);
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `Success! Response:\n${JSON.stringify(data, null, 2)}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `Error: ${response.status} ${response.statusText}\n${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (error) {
+                updateStatus('rootStatus', false);
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `Connection error: ${error.message}\n\nMake sure:\n1. Your Railway app is deployed and running\n2. The URL is correct\n3. CORS is properly configured`;
+            }
+        }
+
+        async function testHealth() {
+            const baseUrl = getBackendUrl();
+            if (!baseUrl) return;
+
+            const resultDiv = document.getElementById('healthResult');
+            resultDiv.className = 'result info';
+            resultDiv.textContent = 'Testing health endpoint...';
+
+            try {
+                const response = await fetch(`${baseUrl}/health`);
+                const data = await response.json();
+                
+                updateStatus('healthStatus', response.ok);
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `Success! Response:\n${JSON.stringify(data, null, 2)}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `Error: ${response.status} ${response.statusText}\n${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (error) {
+                updateStatus('healthStatus', false);
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `Connection error: ${error.message}`;
+            }
+        }
+
+        async function testApiHealth() {
+            const baseUrl = getBackendUrl();
+            if (!baseUrl) return;
+
+            const resultDiv = document.getElementById('apiHealthResult');
+            resultDiv.className = 'result info';
+            resultDiv.textContent = 'Testing API health endpoint...';
+
+            try {
+                const response = await fetch(`${baseUrl}/api/health`);
+                const data = await response.json();
+                
+                updateStatus('apiHealthStatus', response.ok);
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `Success! Response:\n${JSON.stringify(data, null, 2)}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `Error: ${response.status} ${response.statusText}\n${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (error) {
+                updateStatus('apiHealthStatus', false);
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `Connection error: ${error.message}`;
+            }
+        }
+
+        async function testAirdropStatus() {
+            const baseUrl = getBackendUrl();
+            if (!baseUrl) return;
+
+            const resultDiv = document.getElementById('airdropStatusResult');
+            resultDiv.className = 'result info';
+            resultDiv.textContent = 'Testing airdrop status endpoint...';
+
+            try {
+                const response = await fetch(`${baseUrl}/api/airdrop/status`);
+                const data = await response.json();
+                
+                updateStatus('airdropStatusBadge', response.ok && data.enabled);
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `Success! Response:\n${JSON.stringify(data, null, 2)}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `Error: ${response.status} ${response.statusText}\n${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (error) {
+                updateStatus('airdropStatusBadge', false);
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `Connection error: ${error.message}`;
+            }
+        }
+
+        async function testAirdropClaim() {
+            const baseUrl = getBackendUrl();
+            if (!baseUrl) return;
+
+            const walletAddress = document.getElementById('walletAddress').value.trim();
+            if (!walletAddress) {
+                alert('Please enter a wallet address');
+                return;
+            }
+
+            const resultDiv = document.getElementById('claimResult');
+            resultDiv.className = 'result info';
+            resultDiv.textContent = 'Testing airdrop claim...';
+
+            try {
+                const response = await fetch(`${baseUrl}/api/airdrop/claim`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        walletAddress: walletAddress
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `Success! Response:\n${JSON.stringify(data, null, 2)}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `Error: ${response.status} ${response.statusText}\n${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `Connection error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Airdrop - Jewel ICU</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: #fff;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #FFD700;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .test-section {
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid #FFD700;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .test-section h2 {
+            color: #FFD700;
+            margin-bottom: 15px;
+        }
+        
+        .test-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 5px;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        
+        .status.success {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .status.error {
+            background: #f44336;
+            color: white;
+        }
+        
+        .status.pending {
+            background: #FF9800;
+            color: white;
+        }
+        
+        .button {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+        }
+        
+        pre {
+            background: #000;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Jewel ICU Airdrop Test Page</h1>
+    
+    <div class="test-section">
+        <h2>Test Instructions</h2>
+        <ol>
+            <li>Open the main index.html page in your browser</li>
+            <li>Connect your Solflare wallet</li>
+            <li>Once connected, you should see the "Claim Airdrop" button appear</li>
+            <li>Click the "Claim Airdrop" button</li>
+            <li>The button should show a loading state</li>
+            <li>After ~2 seconds, you should see a success toast message</li>
+        </ol>
+    </div>
+    
+    <div class="test-section">
+        <h2>Implementation Details</h2>
+        <div class="test-item">
+            <strong>Airdrop Amount:</strong> 1 JEWEL ICU token
+        </div>
+        <div class="test-item">
+            <strong>Token Mint Address:</strong> 
+            <code>37ApeZ2X8dwKZkV22wDqLzDFh4QRkTMSvkc3uau6pump</code>
+        </div>
+        <div class="test-item">
+            <strong>Network:</strong> Solana Mainnet-Beta
+        </div>
+        <div class="test-item">
+            <strong>Status:</strong> 
+            <span class="status pending">Demo Mode</span>
+            <p style="margin-top: 10px; font-size: 14px;">
+                Note: The current implementation is in demo mode. In a production environment, 
+                you would need a server-side component that holds the airdrop tokens and signs 
+                the transaction to prevent abuse.
+            </p>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Features Implemented</h2>
+        <div class="test-item">
+            ✅ Airdrop button appears only when wallet is connected
+            <span class="status success">Implemented</span>
+        </div>
+        <div class="test-item">
+            ✅ Button shows loading state during processing
+            <span class="status success">Implemented</span>
+        </div>
+        <div class="test-item">
+            ✅ Toast notifications for success/error states
+            <span class="status success">Implemented</span>
+        </div>
+        <div class="test-item">
+            ✅ Prevents multiple simultaneous airdrops
+            <span class="status success">Implemented</span>
+        </div>
+        <div class="test-item">
+            ✅ Styled with gradient purple/pink theme
+            <span class="status success">Implemented</span>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Production Considerations</h2>
+        <p>To make this airdrop functionality production-ready, you would need:</p>
+        <ul>
+            <li><strong>Server-side component:</strong> A backend service that holds the airdrop wallet's private key</li>
+            <li><strong>Rate limiting:</strong> Prevent users from claiming multiple airdrops</li>
+            <li><strong>Database:</strong> Track which wallets have already claimed their airdrop</li>
+            <li><strong>Verification:</strong> Implement eligibility criteria (e.g., wallet age, balance requirements)</li>
+            <li><strong>Security:</strong> Protect against bot attacks and Sybil attacks</li>
+        </ul>
+    </div>
+    
+    <div class="test-section">
+        <h2>Code Structure</h2>
+        <pre>
+class JewelAirdrop {
+    - JEWEL_ICU_MINT: Token mint address
+    - AIRDROP_AMOUNT: 1 token
+    - handleAirdrop(): Main airdrop function
+    - getOrCreateAssociatedTokenAccount(): Token account management
+    - setButtonLoading(): UI state management
+}
+        </pre>
+    </div>
+    
+    <div style="text-align: center; margin-top: 30px;">
+        <a href="index.html" class="button" style="text-decoration: none; display: inline-block;">
+            Go to Main Page
+        </a>
+    </div>
+</body>
+</html>

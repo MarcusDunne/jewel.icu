@@ -1,0 +1,3 @@
+[submodule "airdrop-backend"]
+	path = airdrop-backend
+	url = https://github.com/MarcusDunne/airdrop-backend.git

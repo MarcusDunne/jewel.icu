@@ -8,7 +8,7 @@
     <!-- Solana Web3 and Wallet Adapter Dependencies -->
     <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
     <script src="https://unpkg.com/@solana/wallet-adapter-wallets@latest/lib/index.iife.min.js"></script>
-    <script src="https://unpkg.com/@solana/spl-token@latest/lib/index.iife.min.js"></script>
+    <!-- spl-token IIFE removed (dropped in newer versions); helpers inlined below -->
     <script src="https://unpkg.com/@project-serum/anchor@latest/dist/browser/anchor.js"></script>
     
     <!-- Google reCAPTCHA v3 (optional for now) -->
@@ -2546,6 +2546,34 @@
             }
         }
 
+        // ── SPL Token helpers (replaces missing spl-token IIFE bundle) ────────────
+        const _TOKEN_PROGRAM_ID = new solanaWeb3.PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
+        const _ASSOCIATED_TOKEN_PROGRAM_ID = new solanaWeb3.PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJe8bXo');
+
+        function getAssociatedTokenAddressSync(mint, owner) {
+            return solanaWeb3.PublicKey.findProgramAddressSync(
+                [owner.toBuffer(), _TOKEN_PROGRAM_ID.toBuffer(), mint.toBuffer()],
+                _ASSOCIATED_TOKEN_PROGRAM_ID
+            )[0];
+        }
+
+        function createTransferCheckedInstruction(source, mint, destination, owner, amount, decimals) {
+            const data = Buffer.alloc(10);
+            data.writeUInt8(12, 0);
+            data.writeBigUInt64LE(BigInt(amount), 1);
+            data.writeUInt8(decimals, 9);
+            return new solanaWeb3.TransactionInstruction({
+                keys: [
+                    { pubkey: source,      isSigner: false, isWritable: true  },
+                    { pubkey: mint,        isSigner: false, isWritable: false },
+                    { pubkey: destination, isSigner: false, isWritable: true  },
+                    { pubkey: owner,       isSigner: true,  isWritable: false },
+                ],
+                programId: _TOKEN_PROGRAM_ID,
+                data
+            });
+        }
+
         // ── x402 Purchase: Buy JEWEL with USDC ───────────────────────────────────
         class JewelPurchase {
             constructor() {
@@ -2649,11 +2677,11 @@
                     );
                     const userPubkey  = walletConnection.provider.publicKey;
                     const usdcMint    = new solanaWeb3.PublicKey(this.USDC_MINT);
-                    const fromAta     = splToken.getAssociatedTokenAddressSync(usdcMint, userPubkey);
+                    const fromAta     = getAssociatedTokenAddressSync(usdcMint, userPubkey);
                     const toAta       = new solanaWeb3.PublicKey(accepts.payTo);
                     const usdcAmount  = BigInt(accepts.maxAmountRequired);
 
-                    const ix = splToken.createTransferCheckedInstruction(
+                    const ix = createTransferCheckedInstruction(
                         fromAta, usdcMint, toAta, userPubkey, usdcAmount, 6
                     );
 

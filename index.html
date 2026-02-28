@@ -2674,7 +2674,7 @@
                     this.showMessage('Building USDC transaction\u2026', 'info');
 
                     const conn = new solanaWeb3.Connection(
-                        solanaWeb3.clusterApiUrl('mainnet-beta'), 'confirmed'
+                        'https://rpc.ankr.com/solana', 'confirmed'
                     );
                     const userPubkey  = walletConnection.provider.publicKey;
                     const usdcMint    = new solanaWeb3.PublicKey(this.USDC_MINT);

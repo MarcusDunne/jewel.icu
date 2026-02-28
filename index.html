@@ -2558,10 +2558,11 @@
         }
 
         function createTransferCheckedInstruction(source, mint, destination, owner, amount, decimals) {
-            const data = Buffer.alloc(10);
-            data.writeUInt8(12, 0);
-            data.writeBigUInt64LE(BigInt(amount), 1);
-            data.writeUInt8(decimals, 9);
+            const data = new Uint8Array(10);
+            const view = new DataView(data.buffer);
+            data[0] = 12;
+            view.setBigUint64(1, BigInt(amount), true); // little-endian u64
+            data[9] = decimals;
             return new solanaWeb3.TransactionInstruction({
                 keys: [
                     { pubkey: source,      isSigner: false, isWritable: true  },
